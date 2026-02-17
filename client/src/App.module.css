@@ -1,0 +1,97 @@
+/* App-level layout styles */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px 80px;
+}
+
+.container {
+  width: 100%;
+  max-width: 620px;
+}
+
+/* Header section */
+.header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  background: var(--accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 14px rgba(59, 91, 219, 0.35);
+}
+
+.logoIcon {
+  font-size: 1.4rem;
+  color: #fff;
+  font-weight: 700;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Stats row */
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  box-shadow: var(--shadow-sm);
+  flex-wrap: wrap;
+}
+
+.stat strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.statGreen {
+  color: var(--success) !important;
+}
+
+.statDivider {
+  color: var(--border-strong);
+}
+
+/* Progress bar inside stats */
+.progressWrap {
+  flex: 1;
+  min-width: 80px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-left: 4px;
+}
+
+.progress {
+  height: 100%;
+  background: var(--success);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
