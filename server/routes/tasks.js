@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
 // Creates a new task. Expects { title } in the request body.
 router.post('/', async (req, res) => {
   try {
+    console.log("BODY:", req.body);
     const { title } = req.body;
 
     if (!title || title.trim() === '') {
@@ -74,8 +75,3 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
-
-router.post('/', async (req, res) => {
-  console.log("BODY:", req.body);  // 🔥 shtoje këtë
-
-  const { title } = req.body;
