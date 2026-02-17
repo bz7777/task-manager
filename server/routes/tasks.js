@@ -74,3 +74,8 @@ router.delete('/:id', async (req, res) => {
 });
 
 module.exports = router;
+
+router.post('/', async (req, res) => {
+  console.log("BODY:", req.body);  // 🔥 shtoje këtë
+
+  const { title } = req.body;
