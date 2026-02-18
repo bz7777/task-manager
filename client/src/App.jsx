@@ -1,138 +1,180 @@
-// ─── App Component ────────────────────────────────────────────────────────────
-// Root component that manages all task state and coordinates API calls.
-// This is where useState and useEffect hooks live.
+import { useEffect, useState } from "react"
+import axios from "axios"
 
-import { useState, useEffect } from 'react';
-import { fetchTasks, createTask, updateTask, deleteTask } from './api';
-import TaskForm from './components/TaskForm';
-import TaskList from './components/TaskList';
-import styles from './App.module.css';
+function App() {
+  const API = "https://task-manager-l13n.onrender.com/tasks"
 
-export default function App() {
-  // ── State ──────────────────────────────────────────────────────────────────
-  const [tasks, setTasks] = useState([]);           // All tasks from the server
-  const [loading, setLoading] = useState(true);     // Initial load spinner
-  const [adding, setAdding] = useState(false);      // Button spinner when adding
-  const [error, setError] = useState(null);         // Error message to display
+  const [tasks, setTasks] = useState([])
+  const [title, setTitle] = useState("")
+  const [filter, setFilter] = useState("all")
+  const [darkMode, setDarkMode] = useState(true)
+  const [editingId, setEditingId] = useState(null)
+  const [editText, setEditText] = useState("")
 
-  // Derived counts for the stats bar
-  const total = tasks.length;
-  const completed = tasks.filter((t) => t.completed).length;
-  const remaining = total - completed;
-
-  // ── Load tasks on mount ────────────────────────────────────────────────────
   useEffect(() => {
-    loadTasks();
-  }, []);
+    fetchTasks()
+  }, [])
 
-  async function loadTasks() {
+  const fetchTasks = async () => {
     try {
-      setError(null);
-      const data = await fetchTasks();
-      setTasks(data);
+      const res = await axios.get(API)
+      setTasks(res.data)
     } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+      console.error(err)
     }
   }
 
-  // ── Add a new task ─────────────────────────────────────────────────────────
-  async function handleAdd(title) {
-    try {
-      setAdding(true);
-      const newTask = await createTask(title);
-      // Prepend the new task to the top of the list
-      setTasks((prev) => [newTask, ...prev]);
-    } catch (err) {
-      alert('Failed to add task: ' + err.message);
-    } finally {
-      setAdding(false);
-    }
+  const addTask = async () => {
+    if (!title.trim()) return
+    await axios.post(API, { title })
+    setTitle("")
+    fetchTasks()
   }
 
-  // ── Toggle task completion ─────────────────────────────────────────────────
-  async function handleToggle(id, completed) {
-    try {
-      const updated = await updateTask(id, { completed });
-      setTasks((prev) => prev.map((t) => (t._id === id ? updated : t)));
-    } catch (err) {
-      alert('Failed to update task: ' + err.message);
-    }
+  const toggleTask = async (task) => {
+    const res = await axios.put(`${API}/${task._id}`, {
+      completed: !task.completed,
+    })
+    setTasks(tasks.map(t => t._id === task._id ? res.data : t))
   }
 
-  // ── Edit task title ────────────────────────────────────────────────────────
-  async function handleEdit(id, title) {
-    try {
-      const updated = await updateTask(id, { title });
-      setTasks((prev) => prev.map((t) => (t._id === id ? updated : t)));
-    } catch (err) {
-      alert('Failed to edit task: ' + err.message);
-    }
+  const deleteTask = async (id) => {
+    await axios.delete(`${API}/${id}`)
+    setTasks(tasks.filter(t => t._id !== id))
   }
 
-  // ── Delete a task ──────────────────────────────────────────────────────────
-  async function handleDelete(id) {
-    if (!confirm('Are you sure you want to delete this task?')) return;
-    try {
-      await deleteTask(id);
-      setTasks((prev) => prev.filter((t) => t._id !== id));
-    } catch (err) {
-      alert('Failed to delete task: ' + err.message);
-    }
+  const startEdit = (task) => {
+    setEditingId(task._id)
+    setEditText(task.title)
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const saveEdit = async (id) => {
+    if (!editText.trim()) return
+    const res = await axios.put(`${API}/${id}`, {
+      title: editText,
+    })
+    setTasks(tasks.map(t => t._id === id ? res.data : t))
+    setEditingId(null)
+  }
+
+  const filteredTasks = tasks.filter(task => {
+    if (filter === "active") return !task.completed
+    if (filter === "done") return task.completed
+    return true
+  })
+
   return (
-    <div className={styles.page}>
-      <div className={styles.container}>
+    <div className={`${darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-black"} min-h-screen transition-all duration-500`}>
+      <div className="max-w-xl mx-auto p-6">
 
-        {/* Header */}
-        <header className={styles.header}>
-          <div className={styles.logo}>
-            <span className={styles.logoIcon}>✓</span>
-          </div>
-          <h1 className={styles.title}>Task Manager</h1>
-          <p className={styles.subtitle}>Stay organised, stay focused.</p>
-        </header>
+        {/* HEADER */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Task Manager 🚀by 3n3ID</h1>
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-3 py-1 rounded bg-blue-500 text-white"
+          >
+            {darkMode ? "Light" : "Dark"}
+          </button>
+        </div>
 
-        {/* Stats bar */}
-        {total > 0 && (
-          <div className={styles.stats}>
-            <span className={styles.stat}>
-              <strong>{total}</strong> total
-            </span>
-            <span className={styles.statDivider}>·</span>
-            <span className={styles.stat}>
-              <strong className={styles.statGreen}>{completed}</strong> done
-            </span>
-            <span className={styles.statDivider}>·</span>
-            <span className={styles.stat}>
-              <strong>{remaining}</strong> remaining
-            </span>
-            {/* Progress bar */}
-            <div className={styles.progressWrap}>
-              <div
-                className={styles.progress}
-                style={{ width: `${total > 0 ? (completed / total) * 100 : 0}%` }}
-              />
-            </div>
+        {/* COUNTER */}
+        <div className="mb-4 text-sm opacity-70">
+          {tasks.length} total tasks
+        </div>
+
+        {/* ADD TASK */}
+        <div className="flex flex-col sm:flex-row gap-2 mb-6">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add new task..."
+            className="flex-1 px-4 py-2 rounded border border-gray-400 text-black"
+          />
+          <button
+            onClick={addTask}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded text-white"
+          >
+            Add
+          </button>
+        </div>
+
+        {/* FILTER */}
+        <div className="flex gap-2 mb-6">
+          {["all", "active", "done"].map(f => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-3 py-1 rounded ${
+                filter === f
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-300 text-black"
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* EMPTY STATE */}
+        {filteredTasks.length === 0 && (
+          <div className="text-center opacity-60 mt-10">
+            No tasks yet 👀
           </div>
         )}
 
-        {/* Add task form */}
-        <TaskForm onAdd={handleAdd} loading={adding} />
+        {/* TASK LIST */}
+        <div className="space-y-3">
+          {filteredTasks.map(task => (
+            <div
+              key={task._id}
+              className={`p-4 rounded shadow transition-all duration-300 ${
+                task.completed
+                  ? "bg-green-200 text-black"
+                  : darkMode
+                  ? "bg-gray-800"
+                  : "bg-white"
+              }`}
+            >
+              <div className="flex justify-between items-center">
 
-        {/* Task list */}
-        <TaskList
-          tasks={tasks}
-          loading={loading}
-          error={error}
-          onToggle={handleToggle}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+                {/* EDIT OR TITLE */}
+                {editingId === task._id ? (
+                  <input
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={() => saveEdit(task._id)}
+                    onKeyDown={(e) => e.key === "Enter" && saveEdit(task._id)}
+                    className="flex-1 px-2 py-1 rounded border text-black"
+                    autoFocus
+                  />
+                ) : (
+                  <div
+                    onClick={() => toggleTask(task)}
+                    onDoubleClick={() => startEdit(task)}
+                    className={`flex-1 cursor-pointer ${
+                      task.completed ? "line-through opacity-60" : ""
+                    }`}
+                  >
+                    {task.title}
+                  </div>
+                )}
+
+                {/* DELETE */}
+                <button
+                  onClick={() => deleteTask(task._id)}
+                  className="ml-4 text-red-500 hover:text-red-700"
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
-  );
+  )
 }
+
+export default App
