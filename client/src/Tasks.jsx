@@ -107,14 +107,16 @@ function Tasks() {
         {tasks.map((task) => (
           <div
             key={task._id}
-            className="flex justify-between items-center p-3 bg-gray-200 rounded"
+            className={`flex justify-between items-center p-3 rounded transition duration-300 ${
+              task.completed
+                ? "bg-green-300 text-green-900"
+                : "bg-gray-200"
+            }`}
           >
             <span
               onClick={() => toggleDone(task._id, task.completed)}
               className={`cursor-pointer ${
-                task.completed
-                  ? "line-through text-gray-500"
-                  : ""
+                task.completed ? "line-through" : ""
               }`}
             >
               {task.title}
