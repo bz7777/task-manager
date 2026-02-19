@@ -1,76 +1,92 @@
 // ─── Task Routes ──────────────────────────────────────────────────────────────
-// Defines all REST API endpoints for managing tasks.
 
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Task = require('../models/Task');
+const Task = require("../models/Task");
+const { protect } = require("../middleware/authMiddleware");
 
-// ── GET /tasks ────────────────────────────────────────────────────────────────
-// Returns all tasks, sorted by newest first.
-router.get('/', async (req, res) => {
+
+// ── GET /api/tasks ─────────────────────────────────────────────────────────────
+// Merr vetëm task-et e user-it të loguar
+router.get("/", protect, async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const tasks = await Task.find({ user: req.user._id })
+      .sort({ createdAt: -1 });
+
     res.json(tasks);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    res.status(500).json({ error: "Failed to fetch tasks" });
   }
 });
 
-// ── POST /tasks ───────────────────────────────────────────────────────────────
-// Creates a new task. Expects { title } in the request body.
-router.post('/', async (req, res) => {
+
+// ── POST /api/tasks ────────────────────────────────────────────────────────────
+// Krijon task për user-in e loguar
+router.post("/", protect, async (req, res) => {
   try {
-    console.log("BODY:", req.body);
     const { title } = req.body;
 
-    if (!title || title.trim() === '') {
-      return res.status(400).json({ error: 'Title is required' });
+    if (!title || title.trim() === "") {
+      return res.status(400).json({ error: "Title is required" });
     }
 
-    const task = new Task({ title: title.trim() });
+    const task = new Task({
+      title: title.trim(),
+      user: req.user._id,   // 🔥 lidhja me user
+    });
+
     const savedTask = await task.save();
+
     res.status(201).json(savedTask);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// ── PUT /tasks/:id ────────────────────────────────────────────────────────────
-// Updates an existing task by its ID. Can update title and/or completed.
-router.put('/:id', async (req, res) => {
+
+// ── PUT /api/tasks/:id ─────────────────────────────────────────────────────────
+// Përditëson vetëm task nëse i përket user-it
+router.put("/:id", protect, async (req, res) => {
   try {
     const { title, completed } = req.body;
 
-    // Build the update object dynamically — only update provided fields
-    const updates = {};
-    if (title !== undefined) updates.title = title.trim();
-    if (completed !== undefined) updates.completed = completed;
+    const task = await Task.findOne({
+      _id: req.params.id,
+      user: req.user._id,   // 🔥 siguri
+    });
 
-    const task = await Task.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true } // Return updated doc and validate
-    );
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
 
-    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (title !== undefined) task.title = title.trim();
+    if (completed !== undefined) task.completed = completed;
 
-    res.json(task);
+    const updatedTask = await task.save();
+
+    res.json(updatedTask);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// ── DELETE /tasks/:id ─────────────────────────────────────────────────────────
-// Deletes a task by its ID.
-router.delete('/:id', async (req, res) => {
+
+// ── DELETE /api/tasks/:id ──────────────────────────────────────────────────────
+// Fshin vetëm task nëse i përket user-it
+router.delete("/:id", protect, async (req, res) => {
   try {
-    const task = await Task.findByIdAndDelete(req.params.id);
+    const task = await Task.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id,   // 🔥 siguri
+    });
 
-    if (!task) return res.status(404).json({ error: 'Task not found' });
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
 
-    res.json({ message: 'Task deleted successfully', id: req.params.id });
+    res.json({ message: "Task deleted successfully", id: req.params.id });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to delete task' });
+    res.status(500).json({ error: "Failed to delete task" });
   }
 });
 
