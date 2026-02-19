@@ -3,7 +3,7 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5001";
+const API = "https://task-manager-l13n.onrender.com";
 
 export default function Login() {
   const [email, setEmail] = useState("");
