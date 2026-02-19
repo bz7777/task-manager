@@ -3,7 +3,7 @@ import axios from "axios";
 import { AuthContext } from "./context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5001/api/tasks";
+const API = "https://task-manager-l13n.onrender.com/api/tasks";
 
 function Tasks() {
   const { user, logout } = useContext(AuthContext);
